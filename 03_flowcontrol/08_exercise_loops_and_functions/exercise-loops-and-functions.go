@@ -5,7 +5,7 @@ import (
 	"math"
 )
 
-func sqrt(x float64) (int, float64) {
+func sqrt(x float64) (float64, int) {
 	i := 0
 
 	var p float64
@@ -16,7 +16,7 @@ func sqrt(x float64) (int, float64) {
 		fmt.Printf("%v %v\n", i, z)
 
 		if p == z || math.Abs(p-z) < 0.1e-11 {
-			return i, z
+			return z, i
 		}
 
 		p = z
@@ -25,6 +25,6 @@ func sqrt(x float64) (int, float64) {
 }
 
 func main() {
-	i, z := sqrt(2)
+	z, i := sqrt(2)
 	fmt.Printf("The answer of root square %v is %v. Tried %v times.", 2, z, i)
 }
