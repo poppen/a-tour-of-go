@@ -13,4 +13,6 @@ var (
 
 func main() {
 	fmt.Printf("Type: %T Value: %v\n", toBe, toBe)
+	fmt.Printf("Type: %T Value: %v\n", maxInt, maxInt)
+	fmt.Printf("Type: %T Value: %v\n", z, z)
 }
