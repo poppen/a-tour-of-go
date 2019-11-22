@@ -21,7 +21,7 @@ func (s rot13Reader) Read(b []byte) (int, error) {
 		case 65 <= c && c <= 77:
 			b[i] = c + 13
 		case 78 <= c && c <= 90:
-			b[i] = c - 13
+			b[i] = c + 13 // c + 13 - 26
 		case 97 <= c && c <= 109:
 			b[i] = c + 13
 		case 110 <= c && c <= 123:
