@@ -11,14 +11,23 @@ type Fetcher interface {
 	Fetch(url string) (body string, urls []string, err error)
 }
 
+// Counter checks the url has already been crawled
+type Counter interface {
+	Check(url string) bool
+}
+
 // Crawl uses fetcher to recursively crawl
 // pages starting with url, to a maximum of depth.
-func Crawl(url string, depth int, fetcher Fetcher, wg *sync.WaitGroup) {
+func Crawl(url string, depth int, fetcher Fetcher, counter *urlCounter, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	if depth <= 0 {
 		return
 	}
+	if counter.Check(url) {
+		return
+	}
+
 	body, urls, err := fetcher.Fetch(url)
 	if err != nil {
 		fmt.Println(err)
@@ -28,7 +37,7 @@ func Crawl(url string, depth int, fetcher Fetcher, wg *sync.WaitGroup) {
 	for _, u := range urls {
 		wg.Add(1)
 		go func(url string) {
-			Crawl(url, depth-1, fetcher, wg)
+			Crawl(url, depth-1, fetcher, counter, wg)
 		}(u)
 	}
 	return
@@ -37,7 +46,7 @@ func Crawl(url string, depth int, fetcher Fetcher, wg *sync.WaitGroup) {
 func main() {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
-	Crawl("https://golang.org/", 4, fetcher, wg)
+	Crawl("https://golang.org/", 4, fetcher, &counter, wg)
 	wg.Wait()
 }
 
@@ -89,3 +98,21 @@ var fetcher = fakeFetcher{
 		},
 	},
 }
+
+type urlCounter struct {
+	counter map[string]int
+	mux     sync.Mutex
+}
+
+func (c *urlCounter) Check(url string) bool {
+	defer c.mux.Unlock()
+
+	c.mux.Lock()
+	if _, ok := c.counter[url]; ok {
+		return true
+	}
+	c.counter[url]++
+	return false
+}
+
+var counter = urlCounter{counter: make(map[string]int)}
