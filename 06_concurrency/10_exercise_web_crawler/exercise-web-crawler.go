@@ -36,6 +36,7 @@ func Crawl(url string, depth int, fetcher Fetcher, wg *sync.WaitGroup) {
 
 func main() {
 	wg := &sync.WaitGroup{}
+	wg.Add(1)
 	Crawl("https://golang.org/", 4, fetcher, wg)
 	wg.Wait()
 }
