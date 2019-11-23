@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sync"
 )
 
 // Fetcher returns the body of URL and
@@ -12,10 +13,9 @@ type Fetcher interface {
 
 // Crawl uses fetcher to recursively crawl
 // pages starting with url, to a maximum of depth.
-func Crawl(url string, depth int, fetcher Fetcher) {
-	// TODO: Fetch URLs in parallel.
-	// TODO: Don't fetch the same URL twice.
-	// This implementation doesn't do either:
+func Crawl(url string, depth int, fetcher Fetcher, wg *sync.WaitGroup) {
+	defer wg.Done()
+
 	if depth <= 0 {
 		return
 	}
@@ -26,13 +26,18 @@ func Crawl(url string, depth int, fetcher Fetcher) {
 	}
 	fmt.Printf("found: %s %q\n", url, body)
 	for _, u := range urls {
-		Crawl(u, depth-1, fetcher)
+		wg.Add(1)
+		go func(url string) {
+			Crawl(url, depth-1, fetcher, wg)
+		}(u)
 	}
 	return
 }
 
 func main() {
-	Crawl("https://golang.org/", 4, fetcher)
+	wg := &sync.WaitGroup{}
+	Crawl("https://golang.org/", 4, fetcher, wg)
+	wg.Wait()
 }
 
 // fakeFetcher is Fetcher that returns canned results.
