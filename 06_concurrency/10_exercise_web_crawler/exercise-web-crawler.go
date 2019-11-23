@@ -11,7 +11,7 @@ type Fetcher interface {
 	Fetch(url string) (body string, urls []string, err error)
 }
 
-// Counter checks the url has already been crawled
+// Counter checks the url has been already fetched
 type Counter interface {
 	Check(url string) bool
 }
