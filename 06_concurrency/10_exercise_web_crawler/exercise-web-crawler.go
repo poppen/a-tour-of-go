@@ -15,25 +15,9 @@ type Fetcher interface {
 // pages starting with url, to a maximum of depth.
 func Crawl(url string, depth int, fetcher Fetcher, ch chan int) {
 	defer close(ch)
-
-	if depth <= 0 {
-		return
-	}
-
 	vi := &visit{urls: make(map[string]int)}
-	vi.urls["url"]++
+	childSpider(url, depth-1, fetcher, vi)
 
-	body, urls, err := fetcher.Fetch(url)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Printf("found: %s %q\n", url, body)
-	for _, u := range urls {
-		go func(url string) {
-			childSpider(url, depth-1, fetcher, vi)
-		}(u)
-	}
 	return
 }
 
