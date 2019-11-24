@@ -14,7 +14,7 @@ type Fetcher interface {
 // Crawl uses fetcher to recursively crawl
 // pages starting with url, to a maximum of depth.
 func Crawl(url string, depth int, fetcher Fetcher) {
-	vi := &visit{urls: make(map[string]int)}
+	vi := &visit{urls: make(map[string]bool)}
 	childSpider(url, depth-1, fetcher, vi)
 
 	return
@@ -102,17 +102,17 @@ var fetcher = fakeFetcher{
 }
 
 type visit struct {
-	urls map[string]int
+	urls map[string]bool
 	mux  sync.Mutex
 }
 
-func (v *visit) isVisited(url string) bool {
-	defer v.mux.Unlock()
+func (vi *visit) isVisited(url string) bool {
+	defer vi.mux.Unlock()
 
-	v.mux.Lock()
-	if _, ok := v.urls[url]; ok {
-		return true
+	vi.mux.Lock()
+	if v, ok := vi.urls[url]; ok {
+		return v
 	}
-	v.urls[url]++
+	vi.urls[url] = true
 	return false
 }
