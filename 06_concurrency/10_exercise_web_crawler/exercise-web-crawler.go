@@ -11,20 +11,37 @@ type Fetcher interface {
 	Fetch(url string) (body string, urls []string, err error)
 }
 
-// Counter checks the url has been already fetched
-type Counter interface {
-	Check(url string) bool
-}
-
 // Crawl uses fetcher to recursively crawl
 // pages starting with url, to a maximum of depth.
-func Crawl(url string, depth int, fetcher Fetcher, counter *urlCounter, wg *sync.WaitGroup) {
-	defer wg.Done()
+func Crawl(url string, depth int, fetcher Fetcher, ch chan int) {
+	defer close(ch)
 
 	if depth <= 0 {
 		return
 	}
-	if counter.Check(url) {
+
+	vi := &visit{urls: make(map[string]int)}
+	vi.urls["url"]++
+
+	body, urls, err := fetcher.Fetch(url)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Printf("found: %s %q\n", url, body)
+	for _, u := range urls {
+		go func(url string) {
+			childSpider(url, depth-1, fetcher, vi)
+		}(u)
+	}
+	return
+}
+
+func childSpider(url string, depth int, fetch Fetcher, vi *visit) {
+	if depth <= 0 {
+		return
+	}
+	if vi.isVisited(url) {
 		return
 	}
 
@@ -35,19 +52,21 @@ func Crawl(url string, depth int, fetcher Fetcher, counter *urlCounter, wg *sync
 	}
 	fmt.Printf("found: %s %q\n", url, body)
 	for _, u := range urls {
-		wg.Add(1)
 		go func(url string) {
-			Crawl(url, depth-1, fetcher, counter, wg)
+			childSpider(url, depth-1, fetcher, vi)
 		}(u)
 	}
 	return
 }
 
 func main() {
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	Crawl("https://golang.org/", 4, fetcher, &counter, wg)
-	wg.Wait()
+	ch := make(chan int)
+	Crawl("https://golang.org/", 4, fetcher, ch)
+	for {
+		if _, ok := <-ch; ok {
+			break
+		}
+	}
 }
 
 // fakeFetcher is Fetcher that returns canned results.
@@ -99,20 +118,18 @@ var fetcher = fakeFetcher{
 	},
 }
 
-type urlCounter struct {
-	counter map[string]int
-	mux     sync.Mutex
+type visit struct {
+	urls map[string]int
+	mux  sync.Mutex
 }
 
-func (c *urlCounter) Check(url string) bool {
-	defer c.mux.Unlock()
+func (v *visit) isVisited(url string) bool {
+	defer v.mux.Unlock()
 
-	c.mux.Lock()
-	if _, ok := c.counter[url]; ok {
+	v.mux.Lock()
+	if _, ok := v.urls[url]; ok {
 		return true
 	}
-	c.counter[url]++
+	v.urls[url]++
 	return false
 }
-
-var counter = urlCounter{counter: make(map[string]int)}
