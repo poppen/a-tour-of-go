@@ -5,26 +5,30 @@ import (
 	"math"
 )
 
-func sqrt(x float64) (float64, int) {
-	i := 0
+func areApproximal(x, y float64) bool {
+	if fmt.Sprintf("%.11f", x) == fmt.Sprintf("%.11f", y) {
+		return true
+	}
+	return false
+}
 
+func Sqrt(x float64) (float64, int) {
+	z := 1.0
 	var p float64
 
-	z := 1.0
-	for {
-		z -= (z*z - x) / (2 * z)
-		fmt.Printf("%v %v\n", i, z)
-
-		if p == z || math.Abs(p-z) < 0.1e-11 {
+	i := 1
+	for ; i <= 10; {
+		z -= (z * z - x) / (2 * z)
+		if z == p || areApproximal(z, math.Sqrt(x)) {
 			return z, i
 		}
-
 		p = z
 		i++
 	}
+	return z, i
 }
 
 func main() {
-	z, i := sqrt(2)
-	fmt.Printf("The answer of root square %v is %v. Tried %v times.", 2, z, i)
+	r, i := Sqrt(2)
+	fmt.Printf("The answer is %v, it took %v times to calculate this.\n", r, i)
 }
