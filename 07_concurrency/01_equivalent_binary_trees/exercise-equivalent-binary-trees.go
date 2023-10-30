@@ -9,9 +9,7 @@ import (
 // Walk walks the tree t sending all values
 // from the tree to the channel ch.
 func Walk(t *tree.Tree, ch chan int, depth int) {
-	if t.Value != 0 {
-		ch <- t.Value
-	}
+	ch <- t.Value
 	if t.Left != nil {
 		Walk(t.Left, ch, depth+1)
 	}
@@ -63,6 +61,9 @@ func Same(t1, t2 *tree.Tree) bool {
 
 	a1 = Sort(a1)
 	a2 = Sort(a2)
+	if len(a1) != len(a2) {
+		return false
+	}
 	for i := 0; i < len(a1); i++ {
 		if a1[i] != a2[i] {
 			return false
